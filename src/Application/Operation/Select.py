@@ -24,7 +24,7 @@ def inquire_selection(options: List[Tuple[str, str]]) -> Tuple[Any, Any]:
         for i, option in enumerate(options):
             print(f"{i+1} {option[0].__name__}.{option[1].__name__}")
 
-        selection = input(f"\n{Color.Green}\u276f{Color.Reset} Selection: ")   
+        selection = input(f"\n{Color.Green}\u276f{Color.Reset} Select: ")   
 
         try:
             return options[int(selection)-1]
