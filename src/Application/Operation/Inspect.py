@@ -3,7 +3,7 @@ import inspect
 import re 
 import Features
 
-def inspect_features(*args, **kwargs) -> List[Tuple[Any, Any]]: 
+def collect_features(*args, **kwargs) -> List[Tuple[Any, Any]]: 
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     features = []

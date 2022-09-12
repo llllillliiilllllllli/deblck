@@ -12,7 +12,7 @@ def main():
     UI.print_console() 
 
     try: 
-        features = Inspect.inspect_features()
+        features = Inspect.collect_features()
         selection = Select.inquire_selection(features)
         execution = Execute.execute(selection) 
 

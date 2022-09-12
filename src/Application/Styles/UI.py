@@ -95,8 +95,9 @@ def print_qustm() -> str:
     return print(f"\n{Symbol.qustm}") 
 
 def print_console() -> str:   
-    size = os.get_terminal_size()  
+    os.system("cls")
 
+    terminal_size = os.get_terminal_size()  
     user_name = os.getlogin()
     current_path = os.getcwd()
     current_path = "~\\" + "\\".join(current_path.split("\\")[-3:])
@@ -124,5 +125,5 @@ def print_console() -> str:
     current_date = f"{Color.White}{current_date}{Color.Reset}"
     branch_name = f"{Color.Red}\ue0a0 {branch.name}{Color.Reset}"
 
-    print(f"\n{size.columns * '#'}")    
+    print(f"\n{terminal_size.columns * '#'}")    
     print(f"{user_name} in {current_path} | {current_date} on {branch_name}")
