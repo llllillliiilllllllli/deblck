@@ -97,7 +97,7 @@ def print_qustm() -> str:
 def print_console() -> str:   
     size = os.get_terminal_size()  
 
-    username = os.getlogin()
+    user_name = os.getlogin()
     current_path = os.getcwd()
     current_path = "~\\" + "\\".join(current_path.split("\\")[-3:])
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -119,10 +119,10 @@ def print_console() -> str:
         found_git = True
         branch = repo.active_branch
     
-    username = f"{Color.Yellow}{username}{Color.Reset}"
+    user_name = f"{Color.Yellow}{user_name}{Color.Reset}"
     current_path = f"{Color.Cyan}{current_path}{Color.Reset}"
     current_date = f"{Color.White}{current_date}{Color.Reset}"
     branch_name = f"{Color.Red}\ue0a0 {branch.name}{Color.Reset}"
 
     print(f"\n{size.columns * '#'}")    
-    print(f"{username} in {current_path} | {current_date} on {branch_name}")
+    print(f"{user_name} in {current_path} | {current_date} on {branch_name}")
