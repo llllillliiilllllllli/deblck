@@ -3,7 +3,8 @@ from Styles import Color
 from Utils import Log 
 
 def inquire_selection(options: List[Tuple[str, str]]) -> Tuple[Any, Any]:
-
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     commandline = input(f"{Color.Green}\u276f{Color.Reset} Commandline: ")
 
     if commandline != "":
