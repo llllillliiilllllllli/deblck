@@ -1,0 +1,13 @@
+This is an example project structure organized within a typical hierarchy of files and folders. 
+Project often includes meta files for introduction, specification, guidelines, and and git tracking.
+Project may contains several other subprojects as dependencies all of which is built into solution.
+Each project contains a set of generic directories that are the building blocks of final solution. 
+- build or target stores deployments of the project which can be automated
+- docs cover documentation about guiding materials, classes and members info 
+- src includes header and source files sorted into various packages or components
+- res contains additional files and folders which are required to run source code 
+- test covers testing files typically built as individual units or programs  
+- lib supplies templates, libraries, frameworks or other dependencies to project 
+- util includes tools or extensions that expand main app's features and compatibility
+- sample may be provided as standalone projects to demonstrate app functionalities
+Note: some files and directories may be located differently depending on projects.
