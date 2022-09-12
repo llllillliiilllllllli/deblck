@@ -3,9 +3,9 @@ import traceback
 
 from Config import *
 from Styles import UI
-from Common import Inspect  
-from Common import Select  
-from Common import Execute  
+from Operation import Inspect  
+from Operation import Select  
+from Operation import Execute  
 
 def main():
 
