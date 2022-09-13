@@ -125,5 +125,5 @@ def print_console() -> str:
     current_date = f"{Color.White}{current_date}{Color.Reset}"
     branch_name = f"{Color.Red}\ue0a0 {branch.name}{Color.Reset}"
 
-    print(f"\n{terminal_size.columns * '#'}")    
+    print(f"{terminal_size.columns * '#'}")    
     print(f"{user_name} in {current_path} | {current_date} on {branch_name}")
