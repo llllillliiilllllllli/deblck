@@ -1,14 +1,39 @@
+# YAHOO FINANCE ENDPOINTS
+
+USER_AGENT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) \
+        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"}
+
+URL_BASE = "https://finance.yahoo.com"
+URL_QUOTE = "https://finance.yahoo.com/quote/{symbol}"
+URL_SUMMARY = "https://finance.yahoo.com/quote/{symbol}?p={symbol}"
+URL_CHART = "https://finance.yahoo.com/quote/{symbol}/chart?p={symbol}"
+URL_CONVERSATION = "https://finance.yahoo.com/quote/{symbol}/community?p={symbol}"
+URL_STATISTICS = "https://finance.yahoo.com/quote/{symbol}/key-statistics?p={symbol}"
+URL_HISTORY = "https://finance.yahoo.com/quote/{symbol}/history?p={symbol}"
+URL_PROFILE = "https://finance.yahoo.com/quote/{symbol}/profile?p={symbol}"
+URL_FINANCIALS = "https://finance.yahoo.com/quote/{symbol}/financials?p={symbol}"
+URL_ANALYSIS = "https://finance.yahoo.com/quote/{symbol}/analysis?p={symbol}"
+URL_OPTIONS = "https://finance.yahoo.com/quote/{symbol}/options?p={symbol}" 
+URL_HOLDERS = "https://finance.yahoo.com/quote/{symbol}/holders?p={symbol}"
+URL_SUSTAINABILITY = "https://finance.yahoo.com/quote/{symbol}/sustainability?p={symbol}"
+
+EP_SEARCH = "https://query1.finance.yahoo.com/v1/finance/search?q={query}"
+EP_QUOTE = "https://query1.finance.yahoo.com/v6/finance/quote?symbols={symbols}"
+EP_QUOTE_ALT = "https://query1.finance.yahoo.com/v7/finance/quote?symbols={symbols}"
+EP_OPTIONS = "https://query1.finance.yahoo.com/v7/finance/options/{symbol}"
+EP_DOWNLOAD = "https://query1.finance.yahoo.com/v7/finance/download/{symbol}"
+EP_HISTORY = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}" 
+EP_SUMMARY = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}?modules={modules}"
+
 from typing import Any 
 from datetime import datetime
 import os, re
-from xml.dom.pulldom import default_bufsize
 
 import numpy as np
 import pandas as pd
 import requests
-from requests import Response
 
-from Application.Config import Endpoint
 from Application.Utils import Validation
 from Application.Utils import Convertion
 
@@ -35,7 +60,7 @@ class YahooFinance:
     ### Request Configuration
 
     def config_url(ticker: Ticker) -> str:
-        return Endpoint.EP_HISTORY.replace("{symbol}", self.symbol)
+        return NotImplemented
 
     def config_headers(ticker: Ticker) -> Any:
         return NotImplemented
@@ -50,7 +75,7 @@ class YahooFinance:
         return NotImplemented
     
     def config_timeout() -> Any:
-        return 10
+        return 20
 
     def config_redirects(ticker: Ticker) -> Any:
         return NotImplemented
@@ -62,7 +87,7 @@ class YahooFinance:
             proxies = {"https": proxies}
         return proxies
 
-    ### Code and Ticker Checking
+    ### Ticker Checking
 
     def get_ticker_by_isin(isin, proxy=None, session=None):    
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -71,8 +96,8 @@ class YahooFinance:
             raise ValueError("Invalid ISIN number")
 
         session = session or requests
-        url = "{}/v1/finance/search?q={}".format(Config.BASE_URL, isin)
-        data = session.get(url=url, proxies=proxy, headers=Config.USER_AGENT_HEADERS)
+        url = "{}/v1/finance/search?q={}".format(URL_BASE, isin)
+        data = session.get(url=url, proxies=proxy, headers=USER_AGENT_HEADERS)
         try:
             data = data.json()
             ticker = data.get("quotes", [{}])[0]
@@ -110,14 +135,14 @@ class YahooFinance:
         >>> funct: 8    # export news in data frame to csv file
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""        
         ### 0
-        i_fil = input("Enter input file path: ").replace("\"", "").strip()
-        o_fol = input("Enter output folder path: ").replace("\"", "").strip()
-        o_fil = input("Enter output file name: ").replace(" ", "").strip()
+        in_file = input("\nEnter input file path: ").replace("\"", "").strip()
+        out_dir = input("\nEnter output folder path: ").replace("\"", "").strip()
+        out_file = input("\nEnter output file name: ").replace(" ", "").strip()
 
         try:
-            queries_df = pd.read_csv(i_fil, header=0, encoding="utf-8-sig")
+            queries_df = pd.read_csv(in_file, header=0, encoding="utf-8-sig")
         except:
-            raise Exception(f"Cannot read file {i_fil}")
+            raise Exception(f"Cannot read file {in_file}")
 
         quotes_df = pd.DataFrame(columns=["query", "exchange", "shortname", "quoteType", \
             "symbol", "index", "score", "typeDisp", "longname", "exchDisp", "sector", \
@@ -132,22 +157,22 @@ class YahooFinance:
             for _, query in series.iteritems():
 
         ### 2
-                url = Endpoint.EP_SEARCH.replace("{query}", query)
+                url = EP_SEARCH.replace("{query}", query)
                 timeout = YahooFinance.config_timeout()
                 proxies = YahooFinance.config_proxies()
 
                 try:
-                    print(f"Collect: {url}")
+                    print(f"\nCollect: {url}")
                     response = requests.get(
                         url=url,
-                        headers=Endpoint.USER_AGENT_HEADERS,
+                        headers=USER_AGENT_HEADERS,
                         timeout=timeout,
                         proxies=proxies,
                     )            
                 except:
                     raise Exception(f"Cannot request {url}")   
         ### 3
-                path = f"{o_fol}\\Datason @{query.replace(' ', '')}Search #-------------- .json"
+                path = f"{out_dir}\\Datason @{query.replace(' ', '')}Search #-------------- .json"
                 with open(path, mode="w", encoding="utf-8-sig") as file:
                     file.write(response.text)
 
@@ -197,14 +222,14 @@ class YahooFinance:
                         thumbnail_width, thumbnail_height, thumbnail_tag, relatedTickers]
         
         ### 7
-        path = f"{o_fol}\\Dataset @{o_fil}Quotes #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}Quotes #-------------- .csv"                
         quotes_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
         os.rename(path, path.replace("#--------------", f"#{timestamp}")) 
         
         ### 8
-        path = f"{o_fol}\\Dataset @{o_fil}News #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}News #-------------- .csv"                
         news_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -227,14 +252,14 @@ class YahooFinance:
         >>> funct: 4    # export collected data to the output file
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""        
         ### 0
-        i_fil = input("Enter input file path: ").replace("\"", "").strip()
-        o_fol = input("Enter output folder path: ").replace("\"", "").strip()
-        o_fil = input("Enter output file name: ").replace(" ", "").strip()
+        in_file = input("\nEnter input file path: ").replace("\"", "").strip()
+        out_dir = input("\nEnter output folder path: ").replace("\"", "").strip()
+        out_file = input("\nEnter output file name: ").replace(" ", "").strip()
 
         try:
-            symbols_df = pd.read_csv(i_fil, header=0, encoding="utf-8-sig")
+            symbols_df = pd.read_csv(in_file, header=0, encoding="utf-8-sig")
         except:
-            raise Exception(f"Cannot read file {i_fil}")
+            raise Exception(f"Cannot read file {in_file}")
 
         tickers = []
         for _, series in symbols_df.iteritems():
@@ -244,16 +269,16 @@ class YahooFinance:
 
         ### 1
         symbols = ",".join([ticker.symbol for ticker in tickers])
-        url = Endpoint.EP_QUOTE.replace("{symbol},{symbol}", symbols)
+        url = EP_QUOTE.replace("{symbols}", symbols)
         timeout = YahooFinance.config_timeout()
         proxies = YahooFinance.config_proxies()
 
         ### 2
         try:
-            print(f"Collect: {url}")
+            print(f"\nCollect: {url}")
             response = requests.get(
                 url=url,
-                headers=Endpoint.USER_AGENT_HEADERS,
+                headers=USER_AGENT_HEADERS,
                 timeout=timeout,
                 proxies=proxies,
             )            
@@ -262,7 +287,7 @@ class YahooFinance:
             raise Exception(f"Cannot request {error_msg}")  
 
         ### 3
-        path = f"{o_fol}\\Datason @{o_fil}Quotes #-------------- .json"
+        path = f"{out_dir}\\Datason @{out_file}Quotes #-------------- .json"
         with open(path, mode="w", encoding="utf-8-sig") as file:
             file.write(response.text)
 
@@ -312,7 +337,7 @@ class YahooFinance:
             quotes_df.loc[len(quotes_df)] = values
 
         ### 6
-        path = f"{o_fol}\\Dataset @{o_fil}Quotes #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}Quotes #-------------- .csv"                
         quotes_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -340,14 +365,14 @@ class YahooFinance:
         >>> funct: 9    # export puts in data frame to csv file
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""        
         ### 0
-        i_fil = input("Enter input file path: ").replace("\"", "").strip()
-        o_fol = input("Enter output folder path: ").replace("\"", "").strip()
-        o_fil = input("Enter output file name: ").replace(" ", "").strip()
+        in_file = input("\nEnter input file path: ").replace("\"", "").strip()
+        out_dir = input("\nEnter output folder path: ").replace("\"", "").strip()
+        out_file = input("\nEnter output file name: ").replace(" ", "").strip()
 
         try:
-            symbols_df = pd.read_csv(i_fil, header=0, encoding="utf-8-sig")
+            symbols_df = pd.read_csv(in_file, header=0, encoding="utf-8-sig")
         except:
-            raise Exception(f"cannot read file {i_fil}")
+            raise Exception(f"cannot read file {in_file}")
 
         calls_df = pd.DataFrame(columns=["ticker", "contractSymbol", "strike", "currency", "lastPrice", \
             "change", "percentChange", "volume", "openInterest", "bid", "ask", "contractSize", \
@@ -361,15 +386,15 @@ class YahooFinance:
         for _, series in symbols_df.iteritems():
             for _, symbol in series.iteritems():
         ### 2
-                url = Endpoint.EP_OPTIONS.replace("{symbol}", symbol)
+                url = EP_OPTIONS.replace("{symbol}", symbol)
                 timeout = YahooFinance.config_timeout()
                 proxies = YahooFinance.config_proxies()
 
                 try:
-                    print(f"Collect: {url}")
+                    print(f"\nCollect: {url}")
                     response = requests.get(
                         url=url,
-                        headers=Endpoint.USER_AGENT_HEADERS,
+                        headers=USER_AGENT_HEADERS,
                         timeout=timeout,
                         proxies=proxies,
                     )            
@@ -377,7 +402,7 @@ class YahooFinance:
                     error_msg = response["optionChain"]["error"]
                     raise Exception(f"Cannot request {error_msg}")  
         ### 3
-                path = f"{o_fol}\\Datason @{symbol}Options #-------------- .json"
+                path = f"{out_dir}\\Datason @{symbol}Options #-------------- .json"
                 with open(path, mode="w", encoding="utf-8-sig") as file:
                     file.write(response.text)
 
@@ -389,7 +414,23 @@ class YahooFinance:
                 except:
                     raise Exception(f"Invalid JSON format {response}")
         ### 5
-                if len(response["optionChain"]["result"][0]["options"]) == 0: 
+                try: 
+                    _ = response["optionChain"]["result"][0]["options"]
+                
+                except IndexError:
+                    values = [symbol]
+                    for column in calls_df.columns[1:]:
+                        values.append("—")
+                    calls_df.loc[len(calls_df)] = values
+
+                    values = [symbol]
+                    for column in puts_df.columns[1:]:
+                        values.append("—")
+                    puts_df.loc[len(puts_df)] = values                    
+                    
+                    continue
+
+                except KeyError:
                     values = [symbol]
                     for column in calls_df.columns[1:]:
                         values.append("—")
@@ -402,35 +443,41 @@ class YahooFinance:
                     
                     continue
         ### 6
-                for result in response["optionChain"]["result"][0]["options"][0]["calls"]:            
-                    values = [symbol]
-                    for column in calls_df.columns[1:]:
-                        try: 
-                            values.append(result[column])
-                        except:
-                            values.append("—")
+                try:
+                    for result in response["optionChain"]["result"][0]["options"][0]["calls"]:            
+                        values = [symbol]
+                        for column in calls_df.columns[1:]:
+                            try: 
+                                values.append(result[column])
+                            except:
+                                values.append("—")
 
-                    calls_df.loc[len(calls_df)] = values
+                        calls_df.loc[len(calls_df)] = values
+                except IndexError:
+                     calls_df.loc[len(calls_df)] = ["—" for _ in range(len(calls_df.columns))]
         ### 7
-                for result in response["optionChain"]["result"][0]["options"][0]["puts"]:            
-                    values = [symbol]
-                    for column in puts_df.columns[1:]:
-                        try: 
-                            values.append(result[column])
-                        except:
-                            values.append("—")
+                try:
+                    for result in response["optionChain"]["result"][0]["options"][0]["puts"]:            
+                        values = [symbol]
+                        for column in puts_df.columns[1:]:
+                            try: 
+                                values.append(result[column])
+                            except:
+                                values.append("—")
 
-                    puts_df.loc[len(puts_df)] = values
+                        puts_df.loc[len(puts_df)] = values
+                except IndexError:
+                     puts_df.loc[len(puts_df)] = ["—" for _ in range(len(puts_df.columns))]
 
         ### 8
-        path = f"{o_fol}\\Dataset @{o_fil}Calls #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}Calls #-------------- .csv"                
         calls_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
         os.rename(path, path.replace("#--------------", f"#{timestamp}")) 
         
         ### 9
-        path = f"{o_fol}\\Dataset @{o_fil}Puts #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}Puts #-------------- .csv"                
         puts_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -442,27 +489,28 @@ class YahooFinance:
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
         ### 0
-        i_fil = input("Enter input file path: ").replace("\"", "").strip()
+        in_file = input("\nEnter input file path: ").replace("\"", "").strip()
 
         try:
-            symbols_df = pd.read_csv(i_fil, header=0, encoding="utf-8-sig")
+            symbols_df = pd.read_csv(in_file, header=0, encoding="utf-8-sig")
         except:
-            raise Exception(f"cannot read file {i_fil}")
+            raise Exception(f"cannot read file {in_file}")
 
         ### 1
         for _, series in symbols_df.iteritems():
             for _, symbol in series.iteritems():                
         ### 2
-                url = Endpoint.EP_OPTIONS.replace("{symbol}", symbol)
+                url = EP_DOWNLOAD.replace("{symbol}", symbol)
+                print(f"\nCollect: {url}")
+
                 timeout = YahooFinance.config_timeout()
                 proxies = YahooFinance.config_proxies()
                 params = "..."
 
                 try:
-                    print(f"Collect: {url}")
                     response = requests.get(
                         url=url,
-                        headers=Endpoint.USER_AGENT_HEADERS,
+                        headers=USER_AGENT_HEADERS,
                         timeout=timeout,
                         proxies=proxies,
                     )            
@@ -498,21 +546,21 @@ class YahooFinance:
         >>> funct: 0    # write collect data in indicator data frame to csv file
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
         ### 0
-        i_fil = input("Enter input file path: ").replace("\"", "").strip()
-        o_fol = input("Enter output folder path: ").replace("\"", "").strip()
-        o_fil = input("Enter output file name: ").replace(" ", "").strip()
+        in_file = input("\nEnter input file path: ").replace("\"", "").strip()
+        out_dir = input("\nEnter output folder path: ").replace("\"", "").strip()
+        out_file = input("\nEnter output file name: ").replace(" ", "").strip()
 
         try:
-            symbols_df = pd.read_csv(i_fil, header=0, encoding="utf-8-sig")
+            symbols_df = pd.read_csv(in_file, header=0, encoding="utf-8-sig")
         except:
-            raise Exception(f"Cannot read file {i_fil}")
+            raise Exception(f"Cannot read file {in_file}")
 
         ### 1
-        interval = input("Enter interval [1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo]: ").strip()
+        interval = input("\nEnter interval [1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo]: ").strip()
         if interval not in ["1d","5d","1mo","3mo","6mo","1y","2y","5y","10y","ytd","max"]: 
             raise Exception(f"Invalid interval {period}")
         
-        period = input("Enter period [1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max]: ").strip()
+        period = input("\nEnter period [1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max]: ").strip()
         start_end_dates = False
         if period not in ["1d","5d","1mo","3mo","6mo","1y","2y","5y","10y","ytd","max"]: 
             if re.search(r"[\d]+[-][\d]+[-][\d]+[ ][\d]+[-][\d]+[-][\d]+", period) != None:
@@ -522,15 +570,15 @@ class YahooFinance:
             else:
                 raise Exception(f"Invalid range {period}")        
 
-        adjusted = input("Adjust closing prices (Y/N): ").strip()
+        adjusted = input("\nAdjust closing prices (Y/N): ").strip()
         if adjusted == "Y": close = "adjusted"
         else: close = "unadjusted"
 
-        events = input("Include events (Y/N): ").strip()
+        events = input("\nInclude events (Y/N): ").strip()
         if events == "Y": events = "div%7Csplit"
         else: events = ""
         
-        prepost = input("Include prepost (Y/N): ").strip()
+        prepost = input("\nInclude prepost (Y/N): ").strip()
         if prepost == "Y": prepost = "true"
         else: prepost = "false"
 
@@ -569,12 +617,12 @@ class YahooFinance:
         ### 4
         for _, series in symbols_df.iteritems():
             for _, symbol in series.iteritems(): 
-                url = Endpoint.EP_HISTORY.replace("{symbol}", symbol)
+                url = EP_HISTORY.replace("{symbol}", symbol)
 
                 try:
-                    print(f"Collect: {url}")
+                    print(f"\nCollect: {url}")
                     response = requests.get(
-                        headers=Endpoint.USER_AGENT_HEADERS,
+                        headers=USER_AGENT_HEADERS,
                         url=url,
                         params=params,
                         timeout=timeout,
@@ -584,7 +632,7 @@ class YahooFinance:
                     error_msg = response["chart"]["error"]
                     raise Exception(f"Cannot request {error_msg}")    
         ### 5
-                path = f"{o_fol}\\Datason @{symbol}History #-------------- .json"
+                path = f"{out_dir}\\Datason @{symbol}History #-------------- .json"
                 with open(path, mode="w", encoding="utf-8-sig") as file:
                     file.write(response.text)
 
@@ -599,56 +647,98 @@ class YahooFinance:
                 values = [symbol]
                 for column in meta_df.columns[1:]:
                     if column == "firstTradeDate":
-                        firstTradeDate = response["chart"]["result"][0]["meta"]["firstTradeDate"]
-                        firstTradeDate = Convertion.epoch_to_date(firstTradeDate).strftime("%Y-%m-%d %H:%M:%S") 
-                        values.append(firstTradeDate)
+                        try:
+                            firstTradeDate = response["chart"]["result"][0]["meta"]["firstTradeDate"]
+                            firstTradeDate = Convertion.epoch_to_date(firstTradeDate).strftime("%Y-%m-%d %H:%M:%S") 
+                            values.append(firstTradeDate)
+                        except:
+                            values.append("—")
                         continue
                     if column == "regularMarketTime":
-                        regularMarketTime = response["chart"]["result"][0]["meta"]["regularMarketTime"]
-                        regularMarketTime = Convertion.epoch_to_date(regularMarketTime).strftime("%Y-%m-%d %H:%M:%S")
-                        values.append(regularMarketTime)
+                        try:
+                            regularMarketTime = response["chart"]["result"][0]["meta"]["regularMarketTime"]
+                            regularMarketTime = Convertion.epoch_to_date(regularMarketTime).strftime("%Y-%m-%d %H:%M:%S")
+                            values.append(regularMarketTime)
+                        except:
+                            values.append("—")
                         continue  
                     if column == "currentTradingPeriodPreTimezone":
-                        values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["timezone"]) 
+                        try:
+                            values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["timezone"]) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPreStart":
-                        pre_start = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["start"]
-                        values.append(Convertion.epoch_to_date(pre_start).strftime("%Y-%m-%d %H:%M:%S"))
+                        try:
+                            pre_start = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["start"]
+                            values.append(Convertion.epoch_to_date(pre_start).strftime("%Y-%m-%d %H:%M:%S"))
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPreEnd":
-                        pre_end = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["end"]
-                        values.append(Convertion.epoch_to_date(pre_end).strftime("%Y-%m-%d %H:%M:%S"))
+                        try:
+                            pre_end = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["end"]
+                            values.append(Convertion.epoch_to_date(pre_end).strftime("%Y-%m-%d %H:%M:%S"))
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPreGmtoffset":
-                        values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["gmtoffset"])
+                        try:
+                            values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["pre"]["gmtoffset"])
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodRegularTimezone":
-                        values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["timezone"]) 
+                        try:
+                            values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["timezone"]) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodRegularStart":
-                        reg_start = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["start"]
-                        values.append(Convertion.epoch_to_date(reg_start).strftime("%Y-%m-%d %H:%M:%S")) 
+                        try:
+                            reg_start = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["start"]
+                            values.append(Convertion.epoch_to_date(reg_start).strftime("%Y-%m-%d %H:%M:%S")) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodRegularEnd":
-                        reg_end = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["end"]
-                        values.append(Convertion.epoch_to_date(reg_end).strftime("%Y-%m-%d %H:%M:%S")) 
+                        try:
+                            reg_end = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["end"]
+                            values.append(Convertion.epoch_to_date(reg_end).strftime("%Y-%m-%d %H:%M:%S")) 
+                        except:
+                            values.append("—")
                         continue
-                    if column == "currentTradingPeriodRegularGmtoffset":                            
-                        values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["gmtoffset"]) 
+                    if column == "currentTradingPeriodRegularGmtoffset":       
+                        try:                     
+                            values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["regular"]["gmtoffset"]) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPostTimezone":
-                        values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["timezone"]) 
+                        try:
+                            values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["timezone"]) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPostStart":
-                        pos_start = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["start"]
-                        values.append(Convertion.epoch_to_date(pos_start).strftime("%Y-%m-%d %H:%M:%S")) 
+                        try:
+                            pos_start = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["start"]
+                            values.append(Convertion.epoch_to_date(pos_start).strftime("%Y-%m-%d %H:%M:%S")) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPostEnd":
-                        pos_end = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["end"]
-                        values.append(Convertion.epoch_to_date(pos_end).strftime("%Y-%m-%d %H:%M:%S")) 
+                        try:
+                            pos_end = response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["end"]
+                            values.append(Convertion.epoch_to_date(pos_end).strftime("%Y-%m-%d %H:%M:%S")) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "currentTradingPeriodPostGmtoffset":
-                        values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["gmtoffset"]) 
+                        try:
+                            values.append(response["chart"]["result"][0]["meta"]["currentTradingPeriod"]["post"]["gmtoffset"]) 
+                        except:
+                            values.append("—")
                         continue
                     if column == "tradingPeriodsTimezone":
                         try:
@@ -672,7 +762,7 @@ class YahooFinance:
                         continue
                     if column == "tradingPeriodsGmtoffset":
                         try:
-                            values.append(response["chart"]["result"][0]["meta"]["tradingPeriods"][0][o]["gmtoffset"]) 
+                            values.append(response["chart"]["result"][0]["meta"]["tradingPeriods"][0][0]["gmtoffset"]) 
                         except:
                             values.append("—")
                         continue
@@ -684,28 +774,50 @@ class YahooFinance:
                     
                 meta_df.loc[len(meta_df)] = values
         ### 8
-                timestamps = response["chart"]["result"][0]["timestamp"]            
-                open_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["open"]
-                high_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["high"]
-                low_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["low"]
-                close_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["close"]
-                volumns = response["chart"]["result"][0]["indicators"]["quote"][0]["volume"]
+                try: 
+                    timestamps = response["chart"]["result"][0]["timestamp"]     
+                except:
+                    timestamps = "—"    
+                try:
+                    open_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["open"]
+                except:
+                    open_indexes = "—"    
+                try:
+                    high_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["high"]
+                except:
+                    high_indexes = "—"
+                try:
+                    low_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["low"]
+                except:
+                    low_indexes = "—"
+                try: 
+                    close_indexes = response["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                except:
+                    close_indexes = "—"
+                try:
+                    volumns = response["chart"]["result"][0]["indicators"]["quote"][0]["volume"]
+                except: 
+                    volumns = "—"
 
                 for index, value in enumerate(timestamps):
-                    timestamp = Convertion.epoch_to_date(value).strftime("%Y-%m-%d %H:%M:%S")
+                    if timestamps[index] != "—":
+                        timestamp = Convertion.epoch_to_date(value).strftime("%Y-%m-%d %H:%M:%S")
+                    else: 
+                        timestamp = "—"
+
                     indicators_df.loc[len(indicators_df)] = [
                         symbol, timestamp, open_indexes[index], high_indexes[index],\
                         low_indexes[index], close_indexes[index], volumns[index]]
 
         ### 9
-        path = f"{o_fol}\\Dataset @{o_fil}Meta #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}Meta #-------------- .csv"                
         meta_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
         os.rename(path, path.replace("#--------------", f"#{timestamp}")) 
 
         ### 0
-        path = f"{o_fol}\\Dataset @{o_fil}Indicators #-------------- .csv"                
+        path = f"{out_dir}\\Dataset @{out_file}Indicators #-------------- .csv"                
         indicators_df.to_csv(path, index=False, encoding="utf-8-sig")
 
         timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -717,14 +829,14 @@ class YahooFinance:
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
         """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
         ### 0
-        i_fil = input("Enter input file path: ").replace("\"", "").strip()
-        o_fol = input("Enter output folder path: ").replace("\"", "").strip()
-        o_fil = input("Enter output file name: ").replace(" ", "").strip()
+        in_file = input("\nEnter input file path: ").replace("\"", "").strip()
+        out_dir = input("\nEnter output folder path: ").replace("\"", "").strip()
+        out_file = input("\nEnter output file name: ").replace(" ", "").strip()
 
         try:
-            symbols_df = pd.read_csv(i_fil, header=0, encoding="utf-8-sig")
+            symbols_df = pd.read_csv(in_file, header=0, encoding="utf-8-sig")
         except:
-            raise Exception(f"Cannot read file {i_fil}")
+            raise Exception(f"Cannot read file {in_file}")
         
         ### 1
         for i, module in enumerate(YahooFinance.summary_modules):
@@ -833,14 +945,14 @@ class YahooFinance:
         ### 4
         for _, series in symbols_df.iteritems():
             for _, symbol in series.iteritems():
-                url = Endpoint.EP_SUMMARY\
+                url = EP_SUMMARY\
                     .replace("{symbol}", symbol)\
                     .replace("{modules}", ",".join(modules))
 
                 try:
-                    print(f"Collect: {url}")
+                    print(f"\nCollect: {url}")
                     response = requests.get(
-                        headers=Endpoint.USER_AGENT_HEADERS,
+                        headers=USER_AGENT_HEADERS,
                         url=url,
                         timeout=timeout,
                         proxies=proxies,
@@ -848,7 +960,7 @@ class YahooFinance:
                 except:
                     raise Exception(f"Cannot request {url}")
         ### 6
-                path = f"{o_fol}\\Datason @{symbol}Summary #-------------- .json"
+                path = f"{out_dir}\\Datason @{symbol}Summary #-------------- .json"
                 with open(path, mode="w", encoding="utf-8-sig") as file:
                     file.write(response.text)
 
@@ -861,102 +973,107 @@ class YahooFinance:
                     raise Exception(f"Invalid JSON format {response}")
         ### 7                
                 if "assetProfile" in modules:
-                    result = response["quoteSummary"]["result"][0]["assetProfile"]
-                    values = [symbol]
-                    for column in asset_profile_df.columns[1:]:
-                        if column == "companyOfficers":
-                            officers = [item["name"] for item in result["companyOfficers"]]
-                            values.append(", ".join(officers)) 
-                            continue
-
-                        try: 
-                            values.append(result[column])
-                        except:
-                            values.append("—")
-
-                    asset_profile_df.loc[len(asset_profile_df)] = values
-        ### 8
-                if "defaultKeyStatistics" in modules:
-                    result = response["quoteSummary"]["result"][0]["defaultKeyStatistics"]
-                    values = [symbol]
-                    for column in default_key_stats_df.columns[1:]:
-                        if column == "maxAge":
-                            try:
-                                values.append(result["maxAge"])
-                            except:
-                                values.append("—") 
-                            continue
-
-                        try: 
-                            values.append(result[column]["raw"])
-                        except:
-                            values.append("—")  
-
-                    default_key_stats_df.loc[len(default_key_stats_df)] = values
-        ### 9
-                if "recommendationTrend" in modules:
                     try:
-                        results = response["quoteSummary"]["result"][0]["recommendationTrend"]["trend"]
-                    except:
-                        results = "—"
-
-                    for result in results:
+                        result = response["quoteSummary"]["result"][0]["assetProfile"]
                         values = [symbol]
-                        for column in recommendation_trend_df.columns[1:]:
-                            if column == "maxAge":
-                                try:
-                                    values.append(
-                                        response["quoteSummary"]["result"][0]["recommendationTrend"]["maxAge"])
-                                except:
-                                    values.append("—") 
+                        for column in asset_profile_df.columns[1:]:
+                            if column == "companyOfficers":
+                                officers = [item["name"] for item in result["companyOfficers"]]
+                                values.append(", ".join(officers)) 
                                 continue
 
                             try: 
                                 values.append(result[column])
                             except:
+                                values.append("—")                       
+
+                        asset_profile_df.loc[len(asset_profile_df)] = values                    
+                    except: pass
+        ### 8
+                if "defaultKeyStatistics" in modules:
+                    try:
+                        result = response["quoteSummary"]["result"][0]["defaultKeyStatistics"]
+                        values = [symbol]
+                        for column in default_key_stats_df.columns[1:]:
+                            if column == "maxAge":
+                                try:
+                                    values.append(result["maxAge"])
+                                except:
+                                    values.append("—") 
+                                continue
+
+                            try: 
+                                values.append(result[column]["raw"])
+                            except:
                                 values.append("—")  
 
+                        default_key_stats_df.loc[len(default_key_stats_df)] = values
+                    except: pass
+        ### 9
+                if "recommendationTrend" in modules:
+                    try:
+                        results = response["quoteSummary"]["result"][0]["recommendationTrend"]["trend"]
+                        for result in results:
+                            values = [symbol]
+                            for column in recommendation_trend_df.columns[1:]:
+                                if column == "maxAge":
+                                    try:
+                                        values.append(
+                                            response["quoteSummary"]["result"][0]["recommendationTrend"]["maxAge"])
+                                    except:
+                                        values.append("—") 
+                                    continue
+
+                                try: 
+                                    values.append(result[column])
+                                except:
+                                    values.append("—")  
+
                         recommendation_trend_df.loc[len(recommendation_trend_df)] = values
+                    except: pass
         ### 0   
                 if "financialData" in modules:
-                    result = response["quoteSummary"]["result"][0]["financialData"]
-                    values = [symbol]
-                    for column in financial_data_df.columns[1:]:
-                        if column == "maxAge":
-                            maxAge = response["quoteSummary"]["result"][0]["financialData"]["maxAge"] 
-                            values.append(maxAge)
-                            continue
+                    try:
+                        result = response["quoteSummary"]["result"][0]["financialData"]
+                        values = [symbol]
+                        for column in financial_data_df.columns[1:]:
+                            if column == "maxAge":
+                                maxAge = response["quoteSummary"]["result"][0]["financialData"]["maxAge"] 
+                                values.append(maxAge)
+                                continue
 
-                        if column == "financialCurrency":
-                            currency = response["quoteSummary"]["result"][0]["financialData"]["financialCurrency"] 
-                            values.append(currency)
-                            continue
+                            if column == "financialCurrency":
+                                currency = response["quoteSummary"]["result"][0]["financialData"]["financialCurrency"] 
+                                values.append(currency)
+                                continue
 
-                        try: 
-                            values.append(result[column]["raw"])
-                        except:
-                            values.append("—")  
+                            try: 
+                                values.append(result[column]["raw"])
+                            except:
+                                values.append("—")  
 
-                    financial_data_df.loc[len(financial_data_df)] = values
+                        financial_data_df.loc[len(financial_data_df)] = values
+                    except: pass                        
         ### 1
                 if "majorHoldersBreakdown" in modules:
-                    result = response["quoteSummary"]["result"][0]["majorHoldersBreakdown"]
-                    values = [symbol]
-                    for column in major_holders_df.columns[1:]:
-                        if column == "maxAge":
-                            maxAge = response["quoteSummary"]["result"][0]["majorHoldersBreakdown"]["maxAge"] 
-                            values.append(maxAge)
-                            continue
+                    try:
+                        result = response["quoteSummary"]["result"][0]["majorHoldersBreakdown"]
+                        values = [symbol]
+                        for column in major_holders_df.columns[1:]:
+                            if column == "maxAge":
+                                maxAge = response["quoteSummary"]["result"][0]["majorHoldersBreakdown"]["maxAge"] 
+                                values.append(maxAge)
+                                continue
 
-                        try: 
-                            values.append(result[column]["raw"])
-                        except:
-                            values.append("—")  
+                            try: 
+                                values.append(result[column]["raw"])
+                            except:
+                                values.append("—")  
 
-                    major_holders_df.loc[len(major_holders_df)] = values
+                        major_holders_df.loc[len(major_holders_df)] = values
+                    except: pass
         ### 2
                 if "earnings" in modules:
-
                     if len(earnings_chart_df.columns) != 0:
                         try:
                             quarterly_earnings = response["quoteSummary"]["result"][0]["earnings"]["earningsChart"]["quarterly"]
@@ -1062,22 +1179,131 @@ class YahooFinance:
                 if "earningsHistory" in modules:
                     try:
                         results = response["quoteSummary"]["result"][0]["earningsHistory"]["history"]
-                    except:
-                        results = "—"
+                        for result in results:
+                            values = [symbol]
+                            for column in earnings_history_df.columns[1:]:
+                                if column == "maxAge":
+                                    try: 
+                                        values.append(result["maxAge"] )
+                                    except:
+                                        values.append("—")
+                                    continue
 
-                    for result in results:
+                                if column == "period":
+                                    try:
+                                        values.append(result["period"] )
+                                    except:
+                                        values.append("—")
+                                    continue
+
+                                try: 
+                                    values.append(result[column]["raw"])
+                                except:
+                                    values.append("—")  
+
+                            earnings_history_df.loc[len(earnings_history_df)] = values   
+                    except: pass
+        ### 4
+                if "earningsTrend" in modules:
+                    try:
+                        results = response["quoteSummary"]["result"][0]["earningsTrend"]["trend"]
+                        for result in results:
+                            values = [symbol]
+
+                            try: values.append(result["maxAge"])
+                            except: values.append("—")
+                            try: values.append(result["period"])
+                            except: values.append("—")
+                            try: values.append(result["endDate"])
+                            except: values.append("—")
+                            try: values.append(result["growth"]["raw"])
+                            except: values.append("—")
+
+                            try: values.append(result["earningsEstimate"]["avg"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["earningsEstimate"]["low"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["earningsEstimate"]["high"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["earningsEstimate"]["yearAgoEps"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["earningsEstimate"]["numberOfAnalysts"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["earningsEstimate"]["growth"]["raw"])
+                            except: values.append("—")
+
+                            try: values.append(result["revenueEstimate"]["avg"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["revenueEstimate"]["low"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["revenueEstimate"]["high"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["revenueEstimate"]["numberOfAnalysts"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["revenueEstimate"]["yearAgoRevenue"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["revenueEstimate"]["growth"]["raw"])
+                            except: values.append("—")
+
+                            try: values.append(result["epsTrend"]["current"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsTrend"]["7daysAgo"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsTrend"]["30daysAgo"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsTrend"]["60daysAgo"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsTrend"]["90daysAgo"]["raw"])
+                            except: values.append("—")
+
+                            try: values.append(result["epsRevisions"]["upLast7days"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsRevisions"]["upLast30days"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsRevisions"]["downLast30days"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["epsRevisions"]["downLast90days"]["raw"])
+                            except: values.append("—")
+
+                            earnings_trend_df.loc[len(earnings_trend_df)] = values
+                    except: pass 
+        ### 5
+                if "indexTrend" in modules:
+                    try:
+                        results = response["quoteSummary"]["result"][0]["indexTrend"]["estimates"]
+                        for result in results:
+                            values = [symbol]
+                            try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["maxAge"]) 
+                            except: values.append("—")
+                            try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["symbol"]) 
+                            except: values.append("—")
+                            try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["peRatio"]["raw"]) 
+                            except: values.append("—")
+                            try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["pegRatio"]["raw"]) 
+                            except: values.append("—")
+                            try: values.append(result["period"]) 
+                            except: values.append("—")
+                            try: values.append(result["growth"]["raw"]) 
+                            except: values.append("—")
+
+                        index_trend_df.loc[len(index_trend_df)] = values
+                    except: pass
+        ### 6
+                if "netSharePurchaseActivity" in modules:
+                    try:
+                        result = response["quoteSummary"]["result"][0]["netSharePurchaseActivity"]
                         values = [symbol]
-                        for column in earnings_history_df.columns[1:]:
+                        for column in net_share_purchase_df.columns[1:]:
                             if column == "maxAge":
                                 try: 
-                                    values.append(result["maxAge"] )
+                                    values.append(result["maxAge"])
                                 except:
                                     values.append("—")
                                 continue
-
+                        
                             if column == "period":
-                                try:
-                                    values.append(result["period"] )
+                                try: 
+                                    values.append(result["period"])
                                 except:
                                     values.append("—")
                                 continue
@@ -1087,168 +1313,50 @@ class YahooFinance:
                             except:
                                 values.append("—")  
 
-                        earnings_history_df.loc[len(earnings_history_df)] = values   
-        ### 4
-                if "earningsTrend" in modules:
-                    try:
-                        results = response["quoteSummary"]["result"][0]["earningsTrend"]["trend"]
-                    except:
-                        results = "—"
-
-                    for result in results:
-                        values = [symbol]
-
-                        try: values.append(result["maxAge"])
-                        except: values.append("—")
-                        try: values.append(result["period"])
-                        except: values.append("—")
-                        try: values.append(result["endDate"])
-                        except: values.append("—")
-                        try: values.append(result["growth"]["raw"])
-                        except: values.append("—")
-
-                        try: values.append(result["earningsEstimate"]["avg"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["earningsEstimate"]["low"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["earningsEstimate"]["high"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["earningsEstimate"]["yearAgoEps"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["earningsEstimate"]["numberOfAnalysts"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["earningsEstimate"]["growth"]["raw"])
-                        except: values.append("—")
-
-                        try: values.append(result["revenueEstimate"]["avg"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["revenueEstimate"]["low"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["revenueEstimate"]["high"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["revenueEstimate"]["numberOfAnalysts"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["revenueEstimate"]["yearAgoRevenue"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["revenueEstimate"]["growth"]["raw"])
-                        except: values.append("—")
-
-                        try: values.append(result["epsTrend"]["current"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsTrend"]["7daysAgo"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsTrend"]["30daysAgo"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsTrend"]["60daysAgo"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsTrend"]["90daysAgo"]["raw"])
-                        except: values.append("—")
-
-                        try: values.append(result["epsRevisions"]["upLast7days"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsRevisions"]["upLast30days"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsRevisions"]["downLast30days"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["epsRevisions"]["downLast90days"]["raw"])
-                        except: values.append("—")
-
-                        earnings_trend_df.loc[len(earnings_trend_df)] = values
-        ### 5
-                if "indexTrend" in modules:
-                    try:
-                        results = response["quoteSummary"]["result"][0]["indexTrend"]["estimates"]
-                    except:
-                        results = "—"
-
-                    for result in results:
-                        values = [symbol]
-                        try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["maxAge"]) 
-                        except: values.append("—")
-                        try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["symbol"]) 
-                        except: values.append("—")
-                        try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["peRatio"]["raw"]) 
-                        except: values.append("—")
-                        try: values.append(response["quoteSummary"]["result"][0]["indexTrend"]["pegRatio"]["raw"]) 
-                        except: values.append("—")
-                        try: values.append(result["period"]) 
-                        except: values.append("—")
-                        try: values.append(result["growth"]["raw"]) 
-                        except: values.append("—")
-
-                        index_trend_df.loc[len(index_trend_df)] = values
-        ### 6
-                if "netSharePurchaseActivity" in modules:
-                    result = response["quoteSummary"]["result"][0]["netSharePurchaseActivity"]
-                    
-                    values = [symbol]
-                    for column in net_share_purchase_df.columns[1:]:
-                        if column == "maxAge":
-                            try: 
-                                values.append(result["maxAge"])
-                            except:
-                                values.append("—")
-                            continue
-                    
-                        if column == "period":
-                            try: 
-                                values.append(result["period"])
-                            except:
-                                values.append("—")
-                            continue
-
-                        try: 
-                            values.append(result[column]["raw"])
-                        except:
-                            values.append("—")  
-
-                    net_share_purchase_df.loc[len(net_share_purchase_df)] = values     
+                        net_share_purchase_df.loc[len(net_share_purchase_df)] = values   
+                    except: pass  
         ### 7
                 if "insiderHolders" in modules:
                     try:
                         results = response["quoteSummary"]["result"][0]["insiderHolders"]["holders"]
-                    except:
-                        results = "—"
-
-                    for result in results:
-                        values = [symbol]
-                        try: values.append(result["maxAge"])
-                        except: values.append("—")
-                        try: values.append(result["name"])
-                        except: values.append("—")
-                        try: values.append(result["relation"])
-                        except: values.append("—")
-                        try: values.append(result["url"])
-                        except: values.append("—")
-                        try: values.append(result["transactionDescription"])
-                        except: values.append("—")
-                        try: values.append(result["latestTransDate"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["positionDirect"]["raw"])
-                        except: values.append("—")
-                        try: values.append(result["positionDirectDate"]["raw"])
-                        except: values.append("—")
-                        
-                        insider_holders_df.loc[len(insider_holders_df)] = values
+                        for result in results:
+                            values = [symbol]
+                            try: values.append(result["maxAge"])
+                            except: values.append("—")
+                            try: values.append(result["name"])
+                            except: values.append("—")
+                            try: values.append(result["relation"])
+                            except: values.append("—")
+                            try: values.append(result["url"])
+                            except: values.append("—")
+                            try: values.append(result["transactionDescription"])
+                            except: values.append("—")
+                            try: values.append(result["latestTransDate"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["positionDirect"]["raw"])
+                            except: values.append("—")
+                            try: values.append(result["positionDirectDate"]["raw"])
+                            except: values.append("—")
+                            
+                            insider_holders_df.loc[len(insider_holders_df)] = values
+                    except: pass
         ### 8
                 if "upgradeDowngradeHistory" in modules:
                     try:
                         results = response["quoteSummary"]["result"][0]["upgradeDowngradeHistory"]["history"]
-                    except:
-                        results = "—"
-
-                    for result in results:
-                        values = [symbol]
-                        for column in upgrade_downgrade_df.columns[1:]:
-                            try: 
-                                values.append(result[column])
-                            except:
-                                values.append("—")
-                        
-                        upgrade_downgrade_df.loc[len(upgrade_downgrade_df)] = values
+                        for result in results:
+                            values = [symbol]
+                            for column in upgrade_downgrade_df.columns[1:]:
+                                try: 
+                                    values.append(result[column])
+                                except:
+                                    values.append("—")
+                            
+                            upgrade_downgrade_df.loc[len(upgrade_downgrade_df)] = values
+                    except: pass
         ### 
         if "assetProfile" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}AssetProfile #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}AssetProfile #-------------- .csv"                
             asset_profile_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1256,7 +1364,7 @@ class YahooFinance:
 
         ### 
         if "defaultKeyStatistics" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}DefaultKeyStats #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}DefaultKeyStats #-------------- .csv"                
             default_key_stats_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1264,7 +1372,7 @@ class YahooFinance:
         
         ###
         if "recommendationTrend" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}RecommendationTrend #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}RecommendationTrend #-------------- .csv"                
             recommendation_trend_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1272,7 +1380,7 @@ class YahooFinance:
 
         ###
         if "financialData" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}FinancialData #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}FinancialData #-------------- .csv"                
             financial_data_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1280,7 +1388,7 @@ class YahooFinance:
 
         ###
         if "majorHoldersBreakdown" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}HoldersBreakDown #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}HoldersBreakDown #-------------- .csv"                
             major_holders_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1288,13 +1396,13 @@ class YahooFinance:
                
         ###
         if "earnings" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}Earnings #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}Earnings #-------------- .csv"                
             earnings_chart_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
             os.rename(path, path.replace("#--------------", f"#{timestamp}"))
 
-            path = f"{o_fol}\\Dataset @{o_fil}Financials #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}Financials #-------------- .csv"                
             financials_chart_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1302,7 +1410,7 @@ class YahooFinance:
 
         ###
         if "earningsHistory" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}EarningsHistory #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}EarningsHistory #-------------- .csv"                
             earnings_history_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1310,7 +1418,7 @@ class YahooFinance:
 
         ###
         if "earningsTrend" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}EarningsTrend #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}EarningsTrend #-------------- .csv"                
             earnings_trend_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1318,7 +1426,7 @@ class YahooFinance:
 
         ###
         if "indexTrend" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}IndexTrend #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}IndexTrend #-------------- .csv"                
             index_trend_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1326,7 +1434,7 @@ class YahooFinance:
 
         ###
         if "netSharePurchaseActivity" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}NetSharePurchase #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}NetSharePurchase #-------------- .csv"                
             net_share_purchase_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1334,7 +1442,7 @@ class YahooFinance:
 
         ###
         if "insiderHolders" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}InsiderHolders #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}InsiderHolders #-------------- .csv"                
             insider_holders_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
@@ -1342,7 +1450,7 @@ class YahooFinance:
         
         ###
         if "upgradeDowngradeHistory" in modules:
-            path = f"{o_fol}\\Dataset @{o_fil}UpgradeDowngradeHistory #-------------- .csv"                
+            path = f"{out_dir}\\Dataset @{out_file}UpgradeDowngradeHistory #-------------- .csv"                
             upgrade_downgrade_df.to_csv(path, index=False, encoding="utf-8-sig")
 
             timestamp = datetime.fromtimestamp(os.path.getctime(path)).strftime("%Y%m%d%H%M%S")      
