@@ -1,2 +1,1 @@
-# deblck
- deblck is a project for financial analysis and decentralized applications
+This solution is about technical analysis of financial data and decentralized applications.
